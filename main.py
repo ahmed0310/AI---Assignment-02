@@ -133,4 +133,83 @@ class Grid:
             return cell
         return None
     
-    
+
+# ══════════════════════════════════════════════════════════════════════
+#  SECTION 2 — HEURISTICS & SEARCH ALGORITHMS
+# ══════════════════════════════════════════════════════════════════════
+
+def heuristic_manhattan(a: Cell, b: Cell) -> float:
+    return abs(a.row - b.row) + abs(a.col - b.col)
+
+def heuristic_euclidean(a: Cell, b: Cell) -> float:
+    return math.sqrt((a.row - b.row)**2 + (a.col - b.col)**2)
+
+HEURISTICS = {
+    "Manhattan": heuristic_manhattan,
+    "Euclidean": heuristic_euclidean,
+}
+
+
+class SearchResult:
+    def __init__(self):
+        self.path: list[Cell] = []
+        self.nodes_visited = 0
+        self.path_cost = 0.0
+        self.found = False
+
+
+def _reconstruct_path(goal: Cell) -> list[Cell]:
+    path, node = [], goal
+    while node:
+        path.append(node)
+        node = node.parent
+    path.reverse()
+    for cell in path:
+        cell.on_path = True
+    return path
+
+
+def greedy_bfs(grid: Grid, start: Cell, goal: Cell, heuristic_name="Manhattan") -> SearchResult:
+    """Greedy Best-First Search — expands node with smallest h(n). NOT optimal."""
+    h = HEURISTICS[heuristic_name]
+    result = SearchResult()
+
+    start.h = h(start, goal)
+    start.f = start.h
+    start.g = 0
+
+    counter = 0
+    heap = []
+    heapq.heappush(heap, (start.h, counter, start))
+    start.in_open = True
+    visited: set = set()
+
+    while heap:
+        _, _, current = heapq.heappop(heap)
+        if current.pos in visited:
+            continue
+        visited.add(current.pos)
+        current.in_open   = False
+        current.in_closed = True
+        result.nodes_visited += 1
+
+        if current is goal:
+            result.found     = True
+            result.path      = _reconstruct_path(goal)
+            result.path_cost = goal.g
+            return result
+
+        for nb in grid.neighbors(current):
+            if nb.pos in visited:
+                continue
+            new_g = current.g + 1
+            nb.h  = h(nb, goal)
+            nb.f  = nb.h
+            if not nb.in_open or new_g < nb.g:
+                nb.g = new_g
+                nb.parent = current
+                nb.in_open = True
+                counter += 1
+                heapq.heappush(heap, (nb.h, counter, nb))
+
+    return result
