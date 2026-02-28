@@ -213,3 +213,62 @@ def greedy_bfs(grid: Grid, start: Cell, goal: Cell, heuristic_name="Manhattan") 
                 heapq.heappush(heap, (nb.h, counter, nb))
 
     return result
+
+
+
+def astar(grid: Grid, start: Cell, goal: Cell, heuristic_name="Manhattan") -> SearchResult:
+    """A* Search — f(n)=g(n)+h(n). Guarantees optimal path with admissible heuristic."""
+    h = HEURISTICS[heuristic_name]
+    result = SearchResult()
+
+    start.g = 0
+    start.h = h(start, goal)
+    start.f = start.g + start.h
+
+    counter = 0
+    heap = []
+    heapq.heappush(heap, (start.f, counter, start))
+    start.in_open = True
+    expanded: dict = {}
+
+    while heap:
+        _, _, current = heapq.heappop(heap)
+        if current.pos in expanded and expanded[current.pos] <= current.g:
+            continue
+        expanded[current.pos] = current.g
+        current.in_open   = False
+        current.in_closed = True
+        result.nodes_visited += 1
+
+        if current is goal:
+            result.found     = True
+            result.path      = _reconstruct_path(goal)
+            result.path_cost = goal.g
+            return result
+
+        for nb in grid.neighbors(current):
+            new_g = current.g + 1
+            if new_g < nb.g:
+                nb.g      = new_g
+                nb.h      = h(nb, goal)
+                nb.f      = nb.g + nb.h
+                nb.parent = current
+                nb.in_open   = True
+                nb.in_closed = False
+                counter += 1
+                heapq.heappush(heap, (nb.f, counter, nb))
+
+    return result
+
+
+def run_search(grid: Grid, algo: str, heuristic: str) -> SearchResult:
+    if algo == "A* Search":
+        return astar(grid, grid.start_cell, grid.goal_cell, heuristic)
+    return greedy_bfs(grid, grid.start_cell, grid.goal_cell, heuristic)
+
+
+def replan(grid: Grid, current: Cell, goal: Cell, algo: str, heuristic: str) -> SearchResult:
+    grid.reset_search_state()
+    if algo == "A* Search":
+        return astar(grid, current, goal, heuristic)
+    return greedy_bfs(grid, current, goal, heuristic)
