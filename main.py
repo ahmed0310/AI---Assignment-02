@@ -508,8 +508,8 @@ class App:
     def _build_controls(self):
         px = self.screen.get_width() - PANEL_W + 12
         y  = 68
-        self.dd_algo  = Dropdown((px, y, 234, 30), ["A* Search", "Greedy BFS"], "Algorithm"); y += 58
-        self.dd_heur  = Dropdown((px, y, 234, 30), ["Manhattan", "Euclidean"],  "Heuristic"); y += 58
+        self.dd_algo  = Dropdown((px, y, 234, 30), ["A* Search", "Greedy BFS"], "Algorithm"); y += 120
+        self.dd_heur  = Dropdown((px, y, 234, 30), ["Manhattan", "Euclidean"],  "Heuristic"); y += 100
         self.btn_run  = Button((px, y, 234, 34), "▶  Run Search");    y += 44
         self.btn_reset= Button((px, y, 234, 34), "↺  Reset Grid");    y += 44
         self.btn_rand = Button((px, y, 234, 34), "⚡  Random Map");    y += 44
