@@ -272,3 +272,67 @@ def replan(grid: Grid, current: Cell, goal: Cell, algo: str, heuristic: str) -> 
     if algo == "A* Search":
         return astar(grid, current, goal, heuristic)
     return greedy_bfs(grid, current, goal, heuristic)
+
+
+# ══════════════════════════════════════════════════════════════════════
+#  SECTION 3 — AGENT
+# ══════════════════════════════════════════════════════════════════════
+
+class Agent:
+    def __init__(self):
+        self.cell: Cell | None = None
+        self.path: list[Cell]  = []
+        self.path_index  = 0
+        self.moving      = False
+        self.reached_goal= False
+        self.replanning  = False
+
+    def set_path(self, path: list[Cell]):
+        self.path        = path
+        self.path_index  = 0
+        self.moving      = bool(path)
+        self.reached_goal= False
+        if path:
+            self.cell = path[0]
+
+    def step(self) -> bool:
+        if not self.moving or not self.path:
+            return False
+        nxt = self.path_index + 1
+        if nxt >= len(self.path):
+            self.moving = False
+            self.reached_goal = True
+            return False
+        next_cell = self.path[nxt]
+        if next_cell.cell_type == WALL:
+            self.moving     = False
+            self.replanning = True
+            return False
+        self.path_index = nxt
+        self.cell       = next_cell
+        return True
+
+    def needs_replan(self):
+        return self.replanning
+
+    def accept_replan(self, new_path: list[Cell]):
+        self.path       = new_path
+        self.path_index = 0
+        self.replanning = False
+        self.moving     = bool(new_path)
+        if new_path:
+            self.cell = new_path[0]
+
+    def is_path_blocked(self) -> bool:
+        for cell in self.path[self.path_index + 1:]:
+            if cell.cell_type == WALL:
+                return True
+        return False
+
+    def reset(self):
+        self.path        = []
+        self.path_index  = 0
+        self.moving      = False
+        self.reached_goal= False
+        self.replanning  = False
+        self.cell        = None
