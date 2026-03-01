@@ -336,3 +336,109 @@ class Agent:
         self.reached_goal= False
         self.replanning  = False
         self.cell        = None
+
+
+# ══════════════════════════════════════════════════════════════════════
+#  SECTION 4 — PYGAME GUI
+# ══════════════════════════════════════════════════════════════════════
+
+# ── Palette ─────────────────────────────────────────────────────────
+BG_COLOR       = (15,  17,  26)
+CELL_EMPTY     = (28,  32,  45)
+CELL_WALL      = (12,  14,  20)
+CELL_START     = (50, 205,  50)
+CELL_GOAL      = (220,  60,  60)
+CELL_OPEN      = (255, 200,  40)
+CELL_CLOSED    = (60,  120, 200)
+CELL_PATH      = (50,  230, 130)
+CELL_AGENT     = (255, 100, 200)
+PANEL_BG       = (20,  24,  36)
+PANEL_BORDER   = (50,  60,  85)
+TEXT_PRIMARY   = (220, 230, 255)
+TEXT_SECONDARY = (120, 140, 180)
+TEXT_ACCENT    = (80,  200, 160)
+BTN_NORMAL     = (40,  50,  75)
+BTN_HOVER      = (60,  75, 110)
+BTN_ACTIVE     = (70,  160, 120)
+BTN_BORDER     = (70,  85, 120)
+
+PANEL_W = 260
+
+
+class Button:
+    def __init__(self, rect, label, toggle=False):
+        self.rect    = pygame.Rect(rect)
+        self.label   = label
+        self.toggle  = toggle
+        self.active  = False
+        self.hovered = False
+
+    def draw(self, surface, font):
+        color = BTN_ACTIVE if (self.toggle and self.active) else \
+                BTN_HOVER  if self.hovered else BTN_NORMAL
+        pygame.draw.rect(surface, color,      self.rect, border_radius=6)
+        pygame.draw.rect(surface, BTN_BORDER, self.rect, 1, border_radius=6)
+        txt = font.render(self.label, True, TEXT_PRIMARY)
+        surface.blit(txt, txt.get_rect(center=self.rect.center))
+
+    def handle_event(self, event) -> bool:
+        if event.type == pygame.MOUSEMOTION:
+            self.hovered = self.rect.collidepoint(event.pos)
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if self.rect.collidepoint(event.pos):
+                if self.toggle:
+                    self.active = not self.active
+                return True
+        return False
+
+
+class Dropdown:
+    def __init__(self, rect, options, label=""):
+        self.rect    = pygame.Rect(rect)
+        self.options = options
+        self.label   = label
+        self.index   = 0
+        self.open    = False
+
+    @property
+    def value(self):
+        return self.options[self.index]
+
+    def draw(self, surface, font, small_font):
+        if self.label:
+            lbl = small_font.render(self.label, True, TEXT_SECONDARY)
+            surface.blit(lbl, (self.rect.x, self.rect.y - 18))
+        pygame.draw.rect(surface, BTN_NORMAL, self.rect, border_radius=6)
+        pygame.draw.rect(surface, BTN_BORDER, self.rect, 1, border_radius=6)
+        txt = font.render(self.value, True, TEXT_PRIMARY)
+        surface.blit(txt, txt.get_rect(midleft=(self.rect.x + 8, self.rect.centery)))
+        arrow = small_font.render("▼", True, TEXT_SECONDARY)
+        surface.blit(arrow, arrow.get_rect(midright=(self.rect.right - 8, self.rect.centery)))
+        if self.open:
+            for i, opt in enumerate(self.options):
+                r = pygame.Rect(self.rect.x,
+                                self.rect.bottom + i * self.rect.height,
+                                self.rect.width, self.rect.height)
+                col = BTN_ACTIVE if i == self.index else BTN_HOVER
+                pygame.draw.rect(surface, col,       r, border_radius=4)
+                pygame.draw.rect(surface, BTN_BORDER,r, 1, border_radius=4)
+                t = font.render(opt, True, TEXT_PRIMARY)
+                surface.blit(t, t.get_rect(midleft=(r.x + 8, r.centery)))
+
+    def handle_event(self, event) -> bool:
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if self.rect.collidepoint(event.pos):
+                self.open = not self.open
+                return False
+            if self.open:
+                for i in range(len(self.options)):
+                    r = pygame.Rect(self.rect.x,
+                                    self.rect.bottom + i * self.rect.height,
+                                    self.rect.width, self.rect.height)
+                    if r.collidepoint(event.pos):
+                        self.open  = False
+                        self.index = i
+                        return True
+                self.open = False
+        return False
+
